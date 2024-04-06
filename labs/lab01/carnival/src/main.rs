@@ -18,16 +18,16 @@ fn main() {
     let tom_upper_name = to_uppercase(tom_name);
 
     let shrey = Person {
-        name: shrey_name,
+        name: shrey_upper_name,
         ticket: Some(entry_pass),
     };
 
     let tom = Person {
-        name: tom_name,
+        name: tom_upper_name,
         ticket: None,
     };
 
-    move_ticket(shrey, tom);
+    let (shrey, tom) = move_ticket(shrey, tom);
 
     // do not change these lines
     println!("{} ticket: {:?}", shrey.name, shrey.ticket);
@@ -41,9 +41,10 @@ fn to_uppercase(s: String) -> String {
 
 // Do not change the function signature
 fn move_ticket(mut from: Person, mut to: Person) -> (Person, Person) {
-    // TODO:
     // the ticket should be moved to the "from" person
     // to the 'to' person
+    to.ticket = from.ticket;
+    from.ticket = None;
     // for now, return the people UNCHANGED
     (from, to)
 }
