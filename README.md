@@ -9,5 +9,10 @@ Resources that I use for learning:
 
 
 ## Topic 
-- Week1: 
-
+- Week1: rust basic, option, String 
+- Week2: Collections, Iterators, Error handing
+- Week3: Owernship, Borrowing, lifetimes, Smart Pointers
+- Week4: Modules, Testing, Documentation
+- Week5: Polymorphism
+- Week7: Functions
+- Week8: Concurrency
