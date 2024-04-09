@@ -22,3 +22,7 @@ Draw the Mandelbrot fractal
 Do whatever seems cool to you :)
 
 ![](./imgs/mandelbrot.bmp)
+
+
+
+
