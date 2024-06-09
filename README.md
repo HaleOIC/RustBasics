@@ -1,4 +1,4 @@
-# UNSW_COMP6991 Solving modern problems using Rust
+# UNSW COMP6991 Solving modern problems using Rust
 
 Resources that I use for learning:
 
@@ -16,3 +16,5 @@ Resources that I use for learning:
 - Week5: Polymorphism
 - Week7: Functions
 - Week8: Concurrency
+- Week9: Unsafe, community crates
+- Week10: Wrap up exam overview
