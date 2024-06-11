@@ -6,9 +6,24 @@ use std::{fs::File, io::BufReader};
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 enum PokemonTypes {
-    Bug, Dark, Dragon, Electric, Fairy, Fighting,
-    Fire, Flying, Ghost, Grass, Ground, Ice,
-    Normal, Poison, Psychic, Rock, Steel, Water
+    Bug,
+    Dark,
+    Dragon,
+    Electric,
+    Fairy,
+    Fighting,
+    Fire,
+    Flying,
+    Ghost,
+    Grass,
+    Ground,
+    Ice,
+    Normal,
+    Poison,
+    Psychic,
+    Rock,
+    Steel,
+    Water,
 }
 
 // DO NOT EDIT THIS CODE
@@ -27,7 +42,7 @@ struct Pokemon {
     id: u32,
     #[serde(rename = "type")]
     types: Vec<PokemonTypes>,
-    name: PokemonNames
+    name: PokemonNames,
 }
 
 // DO NOT EDIT THIS CODE
@@ -52,7 +67,6 @@ fn get_pokedex_and_queries() -> (Pokedex, Vec<String>) {
     (all_pokemon, queries)
 }
 
-
 /// DO NOT EDIT THE ABOVE CODE
 ////////////////////////////////////////////////////////////
 
@@ -63,32 +77,41 @@ fn get_pokedex_and_queries() -> (Pokedex, Vec<String>) {
 //  - Construct or clone a String
 
 #[derive(Debug, PartialEq, Eq)]
-struct FoundPokemon {
-    pokemon: Pokemon,
-    matching_queries: Vec<String>
+struct FoundPokemon<'a> {
+    pokemon: &'a Pokemon,
+    matching_queries: Vec<String>,
 }
 
-
-fn search_pokedex(query: &str, pokedex: Pokedex, search_results: Vec<FoundPokemon>) {
+fn search_pokedex<'a, 'b>(
+    query: &str,
+    pokedex: &'a Pokedex,
+    search_results: &'b mut Vec<FoundPokemon<'a>>,
+) {
     for pokemon in pokedex {
         let contains_en = pokemon.name.english.contains(query);
         let contains_cn = pokemon.name.chinese.contains(query);
         let contains_jp = pokemon.name.japanese.contains(query);
         if contains_en || contains_cn || contains_jp {
-            match search_results.iter_mut().find(|found_pokemon| found_pokemon.pokemon == pokemon) {
-                Some(found_pokemon) => found_pokemon.matching_queries.push(query),
-                None => search_results.push(FoundPokemon {pokemon, matching_queries: vec![query]})
+            match search_results
+                .iter_mut()
+                .find(|found_pokemon| found_pokemon.pokemon == pokemon)
+            {
+                Some(found_pokemon) => found_pokemon.matching_queries.push(query.to_string()),
+                None => search_results.push(FoundPokemon {
+                    pokemon,
+                    matching_queries: vec![query.to_string()],
+                }),
             }
         }
     }
 }
 
-fn print_found_pokemon(found_pokemon: Vec<FoundPokemon>) {
+fn print_found_pokemon(found_pokemon: &Vec<FoundPokemon>) {
     for pokemon in found_pokemon {
-        let name = pokemon.pokemon.name.english;
+        let name = pokemon.pokemon.name.english.clone();
         print!("{name:20} : ");
 
-        for query in pokemon.matching_queries {
+        for query in pokemon.matching_queries.iter() {
             print!("{query}; ")
         }
 
@@ -97,13 +120,13 @@ fn print_found_pokemon(found_pokemon: Vec<FoundPokemon>) {
 }
 
 fn main() {
-    let (pokedex, queries) =  get_pokedex_and_queries();
+    let (pokedex, queries) = get_pokedex_and_queries();
 
     let mut found_pokemon: Vec<FoundPokemon> = Vec::new();
 
     for query in queries.iter() {
-        search_pokedex(&query, pokedex, found_pokemon);
+        search_pokedex(&query, &pokedex, &mut found_pokemon);
     }
 
-    print_found_pokemon(found_pokemon);
+    print_found_pokemon(&found_pokemon);
 }
