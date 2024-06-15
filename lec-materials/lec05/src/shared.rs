@@ -3,6 +3,13 @@ fn string_chars_len(string: &String) -> usize {
 }
 
 
+
+
+
+
+
+
+
 #[cfg(test)]
 mod tests {
     use super::string_chars_len;

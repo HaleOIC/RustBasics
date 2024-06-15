@@ -4,6 +4,50 @@ mod pain;
 mod shared;
 mod exclusive;
 mod dangling;
+mod slice;
+
+
+fn main() {
+    pain::main();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    let string = String::from("dwang");
+
+    let student = Student {
+        zid: 5555555,
+        name: string,
+        wam: Some(100.0),
+    };
+
+    say_hello_to_student(student);
+    // say_hello_to_student(student);
+
+    let x = 42; // i32: Copy
+    // i32, u32, i8, i128, f32, f64, bool, char, (), (bool, i32), (i32, i32, i32, ..., i32)
+    let y = x.clone();
+
+    println!("x = {x}, y = {y}");
+}
+
 
 struct Student {
     zid: u32,
@@ -11,36 +55,15 @@ struct Student {
     wam: Option<f64>,
 }
 
-fn main() {
-    let student = Student {
-        zid: 5555555,
-        name: String::from("hello"),
-        wam: None,
-    };
-
-    // match:   &name
-    //          &String::from("hello")
-    //
-    //          name = String::from("hello")
-
-    match &student {
-        Student { zid, name, wam } => {
-            println!("{name}");
-        }
-    }
-
-    match &student {
-        &Student { zid, ref name, wam } => {
-            println!("{name}");
-        }
-    }
-
-    match student {
-        Student { zid, ref name, wam } => {
-            println!("{name}");
-        }
-    }
-
-    println!("{}", student.name);
+enum Foo {
+    A(String),
+    B(Student),
+    C(MoveI32),
 }
 
+fn say_hello_to_student(student: Student) {
+    println!("Hello there {}", student.name);
+}
+
+#[derive(Copy, Clone)]
+struct MoveI32(i32);

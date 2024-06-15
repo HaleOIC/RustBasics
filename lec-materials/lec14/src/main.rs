@@ -1,11 +1,13 @@
-use rayon::iter::IntoParallelIterator;
-use rayon::iter::ParallelIterator;
+#![allow(unused)]
+
+// mod move_closure;
+// mod rwlock;
+// mod channel;
+mod par_iter;
 
 fn main() {
-    let total: f64 = (0..100_000_000_000u64)
-        .into_par_iter()
-        .map(|n| n as f64)
-        .sum();
-
-    println!("{total}");
+    // move_closure::main();
+    // rwlock::main();
+    // channel::main();
+    par_iter::main();
 }

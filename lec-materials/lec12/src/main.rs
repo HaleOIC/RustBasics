@@ -1,183 +1,145 @@
-#![allow(unused)]
+use std::time::{Duration, Instant};
 
-use std::{thread::sleep, time::{Duration, Instant}};
-
-fn add1(x: i32) -> i32 {
-    x + 1
+pub trait MyMapExt<I> {
+    fn my_map<F, CurrItem, NewItem>(self, function: F) -> MyMap<I, F>
+    where
+        I: Iterator<Item = CurrItem>,
+        F: FnMut(CurrItem) -> NewItem;
 }
 
-trait MyMapExt<I> {
-    fn my_map<F>(self, f: F) -> MyMap<I, F>;
-}
-
-impl<I> MyMapExt<I> for I {
-    fn my_map<F>(self, f: F) -> MyMap<I, F> {
-        MyMap { iter: self, f }
+impl<I> MyMapExt<I> for I
+where
+    I: Iterator
+{
+    fn my_map<F, CurrItem, NewItem>(
+        self,
+        function: F
+    ) -> MyMap<I, F>
+    {
+        MyMap {
+            iter: self,
+            function,
+        }
     }
 }
 
-struct MyMap<I, F> {
+
+
+pub struct MyMap<I, F> {
     iter: I,
-    f: F,
+    function: F,
 }
 
-impl<I, F, In, Out> Iterator for MyMap<I, F>
+impl<I, F, CurrItem, NewItem> Iterator for MyMap<I, F>
 where
-    I: Iterator<Item = In>,
-    F: FnMut(In) -> Out,
+    I: Iterator<Item = CurrItem>,
+    F: FnMut(CurrItem) -> NewItem,
 {
-    type Item = Out;
+    type Item = NewItem;
 
-    fn next(&mut self) -> Option<Out> {
-        // Some((self.f)(self.iter.next()?))
-
-        let item: In = self.iter.next()?;
-        let mapped: Out = (self.f)(item);
-
-        Some(mapped)
+    fn next(&mut self) -> Option<Self::Item> {
+        let curr_item = self.iter.next()?;
+        let new_item = (self.function)(curr_item);
+        Some(new_item)
     }
 }
 
-fn my_map<I, F>(iter: I, f: F) -> MyMap<I, F> {
-    MyMap {
-        iter,
-        f,
-    }
-}
-
-fn time_function<F>(f: F) -> Duration
-where
-    F: FnOnce(),
-{
+fn time_closure<T>(f: impl FnOnce() -> T) -> (T, Duration) {
     let before = Instant::now();
-
-    f();
-
-    let duration = before.elapsed();
-    duration
-}
-
-fn slow() {
-    println!("Thinking...");
-    sleep(Duration::from_secs(1));
-    println!("Done!");
+    let t = f();
+    (t, Instant::now().duration_since(before))
 }
 
 fn main() {
-    /*
-    let mut s = String::from("hello");
-    let mut closure = || {
-        drop(s);
-    };
+    // Closure: fn-pointer + environment (captures)
 
-    closure();
-    closure();
-    */
+    let mut line = String::new();
+    std::io::stdin().read_line(&mut line).unwrap();
+    let greeting = line.trim().to_string();
+    
 
-    let mut s = String::from("hello");
-    let duration = time_function(|| {
-        println!("Thinking...");
-        sleep(Duration::from_secs(1));
-        println!("Done!");
+    
 
-        drop(s);
-    });
-    println!("{duration:?}");
+    // My map
 
-    let mut add = 0;
+    let mut nth = 1;
 
-    let v1 = [1, 2, 3].into_iter()
-        .map(|x| {
-            add += 1;
+    let names = vec!["Miguel", "Mitchell", "Patrick", "Dong", "Tom"];
+    let greeted = names.into_iter()
+        .my_map(|name| {
+            let greet_name = format!("#{nth}: {greeting} {name}");
+            nth += 1;
 
-            x + add
+            greet_name
         })
         .collect::<Vec<_>>();
+    
+    println!("My map: {greeted:?}");
 
-    println!("{v1:?}");
 
-    let mut add = 0;
 
-    let v2 = [1, 2, 3].into_iter()
-        .my_map(|x| {
-            add += 1;
-            x + add
+
+
+    // Std
+
+    let mut nth = 1;
+
+    let names = vec!["Miguel", "Mitchell", "Patrick", "Dong", "Tom"];
+    let greeted = names.into_iter()
+        .map(|name| {
+            let greet_name = format!("#{nth}: {greeting} {name}");
+            nth += 1;
+
+            greet_name
         })
         .collect::<Vec<_>>();
+    
+    println!("Std: {greeted:?}");
 
-    println!("{v2:?}");
+
+    // let x = |x: i32, y: i32| -> f32 { (x + y) as f32 * factor };
+    // foo(x);
 }
-
-// struct ClosureSrcMain3718 {
-//     add: i32,
-// }
-
-// impl Fn for ClosureSrcMain3718 {
-//     fn call(x: i32) -> i32 {
-//         x + self.add
-//     }
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
-fn add1(x: i32) -> i32 {
-    x + 1
-}
 
-fn call_twice(f: fn()) {
-    f();
-    f();
-}
+    struct MainXClosureCaptures<'a> {
+        borrow_factor: &'a f32
+    }
 
-fn apply_twice<T>(f: fn(T) -> T, t: T) -> T {
-    f(f(t))
-}
+    impl Fn(i32, i32) -> f32 for MainXClosureCaptures<'_> {
+        fn call(&self, x: i32, y: i32) -> f32 {
+            (x + y) as f32 * self.borrow_factor
+        }
+    }
+    let x = MainXClosureCaptures { borrow_factor: &factor };
 
-fn main() {
-    let f: fn(i32) -> i32 = add1;
 
-    let x = f(42);
-    println!("{x}");
 
-    call_twice(|| {
-        println!("{}", x);
-    });
 
-    let x = apply_twice(add1, 42);
-    println!("{x}");
-}
+
+    struct MainXClosureCaptures<'a> {
+        borrow_factor: &'a mut f32
+    }
+
+    impl FnMut(i32, i32) -> f32 for MainXClosureCaptures<'_> {
+        fn call(&mut self, x: i32, y: i32) -> f32 {
+            (x + y) as f32 * self.borrow_factor
+        }
+    }
+    let x = MainXClosureCaptures { borrow_factor: &mut factor };
+
+
+
+    struct MainXClosureCaptures {
+        borrow_factor: f32
+    }
+
+    impl FnOnce(i32, i32) -> f32 for MainXClosureCaptures<'_> {
+        fn call(self, x: i32, y: i32) -> f32 {
+            (x + y) as f32 * self.borrow_factor
+        }
+    }
+    let x = MainXClosureCaptures { borrow_factor: factor };
+
 */

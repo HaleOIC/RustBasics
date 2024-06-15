@@ -23,4 +23,5 @@ class DataRace {
         
         System.out.println(String.format("Final total: %d (expected %d)\n", my_number, N_THREADS * N_INCREMENTS));
     }
+
 }

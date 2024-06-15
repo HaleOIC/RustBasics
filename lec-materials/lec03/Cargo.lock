@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "lec03"
+name = "collections"
 version = "0.1.0"

@@ -14,6 +14,7 @@
 ///
 /// assert_eq!(s, "TEST!!!");
 /// ```
+/// Google: noalias (Rust)
 fn emphasize(string: &mut String) {
     string.make_ascii_uppercase();
     string.push_str("!!!");
