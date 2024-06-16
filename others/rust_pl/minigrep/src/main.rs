@@ -1,23 +1,19 @@
 use std::env;
-use std::fs;
+use std::process;
+
+use minigrep::Config;
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = env::args().collect(); // return back a dynamic array
 
-    // Introduce Usage msg for hints
-    if args.len() != 3 {
-        return Err(String::from(
-            "Usage: cargo run [searchString] [example-filename]",
-        ));
+    let config = Config::build(&args).unwrap_or_else(|err| {
+        eprintln!("Problem parsing arguments: {}", err);
+        process::exit(1);
+    });
+
+    if let Err(e) = minigrep::run(config) {
+        eprintln!("Application error: {}", e);
+        process::exit(1);
     }
-
-    let query = args.get(1).unwrap();
-    let filename = args.get(2).unwrap();
-    println!("query string: {:?}, filename: {:?}", query, filename);
-
-    // read content from file
-    let contents = fs::read_to_string(filename).expect("Something went wrong reading the file");
-    println!("With text: \n{}", contents);
-
     Ok(())
 }
