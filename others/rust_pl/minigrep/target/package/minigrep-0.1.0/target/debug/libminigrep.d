@@ -1,0 +1,1 @@
+/home/hale/self-learning/UNSW_COMP6991/others/rust_pl/minigrep/target/package/minigrep-0.1.0/target/debug/libminigrep.rlib: /home/hale/self-learning/UNSW_COMP6991/others/rust_pl/minigrep/target/package/minigrep-0.1.0/src/lib.rs
