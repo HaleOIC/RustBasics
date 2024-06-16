@@ -1,4 +1,0 @@
-// Description: Confirm that the FORWARD and BACK commands move the turtle correctly.
-PENDOWN
-FORWARD "50
-BACK "80

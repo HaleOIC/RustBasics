@@ -1,3 +1,5 @@
+mod pen;
+
 use clap::Parser;
 use unsvg::Image;
 
@@ -27,6 +29,8 @@ fn main() -> Result<(), ()> {
     let width = args.width;
 
     let image = Image::new(width, height);
+
+    let mut pen = pen::Pen::new();
 
     match image_path.extension().map(|s| s.to_str()).flatten() {
         Some("svg") => {

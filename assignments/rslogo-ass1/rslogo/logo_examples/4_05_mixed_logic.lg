@@ -1,7 +1,0 @@
-// Arithmetic and Logic
-PENDOWN
-IF EQ * "6 "2 "12 [
-   FORWARD "20
-]
-
-
