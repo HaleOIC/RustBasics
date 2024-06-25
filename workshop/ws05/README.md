@@ -1,6 +1,6 @@
 # README
 
-**finishing all Tasks!!!!!!!!!**
+**Finished all Tasks!!!!!!!!!**
 
 - [X] Understanding
 - [X] starting
