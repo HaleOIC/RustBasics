@@ -41,7 +41,6 @@ impl CompareOperator {
     }
 }
 
-
 pub struct MathExpression {
     arg1: Box<Expression>,
     arg2: Box<Expression>,
@@ -159,11 +158,14 @@ impl Expression {
         if operator.is_some() {
             let (exp1, end) = Expression::parse_expression(tokens, cur + 1)?;
             let (exp2, end) = Expression::parse_expression(tokens, end + 1)?;
-            return Some((Expression::Arithmetic(MathExpression {
-                arg1: Box::new(exp1),
-                arg2: Box::new(exp2),
-                operator: operator.unwrap(),
-            }), end));
+            return Some((
+                Expression::Arithmetic(MathExpression {
+                    arg1: Box::new(exp1),
+                    arg2: Box::new(exp2),
+                    operator: operator.unwrap(),
+                }),
+                end,
+            ));
         }
 
         // case4: if the first token is a compare expression
@@ -171,18 +173,20 @@ impl Expression {
         if operator.is_some() {
             let (exp1, end) = Expression::parse_expression(tokens, cur + 1)?;
             let (exp2, end) = Expression::parse_expression(tokens, end + 1)?;
-            return Some((Expression::Comparison(CompareExpression {
-                arg1: Box::new(exp1),
-                arg2: Box::new(exp2),
-                operator: operator.unwrap(),
-            }), end));
+            return Some((
+                Expression::Comparison(CompareExpression {
+                    arg1: Box::new(exp1),
+                    arg2: Box::new(exp2),
+                    operator: operator.unwrap(),
+                }),
+                end,
+            ));
         }
 
         // default case: None
         None
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -223,7 +227,13 @@ mod tests {
 
     #[test]
     fn test_nested_arithmetic_expression() {
-        let tokens = vec!["+".to_string(), "\"2.0".to_string(), "*".to_string(), "\"3.0".to_string(), "\"4.0".to_string()];
+        let tokens = vec![
+            "+".to_string(),
+            "\"2.0".to_string(),
+            "*".to_string(),
+            "\"3.0".to_string(),
+            "\"4.0".to_string(),
+        ];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let values = HashMap::new();
         // This should evaluate 2 + (3 * 4) = 14
@@ -232,7 +242,13 @@ mod tests {
 
     #[test]
     fn test_combined_arithmetic_and_comparison() {
-        let tokens = vec!["EQ".to_string(), "+".to_string(), "\"2.0".to_string(), "\"3.0".to_string(), "\"5.0".to_string()];
+        let tokens = vec![
+            "EQ".to_string(),
+            "+".to_string(),
+            "\"2.0".to_string(),
+            "\"3.0".to_string(),
+            "\"5.0".to_string(),
+        ];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let values = HashMap::new();
         // This should evaluate (2 + 3) == 5 to be true, hence 1.0
@@ -241,7 +257,15 @@ mod tests {
 
     #[test]
     fn test_logical_operations() {
-        let tokens = vec!["AND".to_string(), "NE".to_string(), "\"5.0".to_string(), "\"3.0".to_string(), "EQ".to_string(), "\"2.0".to_string(), "\"2.0".to_string()];
+        let tokens = vec![
+            "AND".to_string(),
+            "NE".to_string(),
+            "\"5.0".to_string(),
+            "\"3.0".to_string(),
+            "EQ".to_string(),
+            "\"2.0".to_string(),
+            "\"2.0".to_string(),
+        ];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let values = HashMap::new();
         // This should evaluate (5 != 3) AND (2 == 2), both true, hence 1.0
@@ -254,9 +278,7 @@ mod tests {
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let values = HashMap::new();
         // Since :x is not in values, this should panic
-        let result = std::panic::catch_unwind(|| {
-            expression.evaluate(&values)
-        });
+        let result = std::panic::catch_unwind(|| expression.evaluate(&values));
         assert!(result.is_err());
     }
 
@@ -271,15 +293,15 @@ mod tests {
     #[test]
     fn test_deep_nested_expressions_with_variables() {
         let tokens = vec![
-            "EQ".to_string(), 
-            "+".to_string(), 
-            ":x".to_string(), 
-            "*".to_string(), 
-            ":y".to_string(), 
-            "+".to_string(), 
-            "\"3.0".to_string(), 
-            "\"2.0".to_string(), 
-            "\"15.0".to_string()
+            "EQ".to_string(),
+            "+".to_string(),
+            ":x".to_string(),
+            "*".to_string(),
+            ":y".to_string(),
+            "+".to_string(),
+            "\"3.0".to_string(),
+            "\"2.0".to_string(),
+            "\"15.0".to_string(),
         ];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let mut values = HashMap::new();
