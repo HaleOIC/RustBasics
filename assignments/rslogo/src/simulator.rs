@@ -26,7 +26,9 @@ impl<'a, 'b> Simulator<'a, 'b> {
             return Err(());
         }
         for statement in self.parser.show_statements() {
-            statement.execute(&mut self.values, &mut self.pen, self.image);
+            if !statement.execute(&mut self.values, &mut self.pen, self.image) {
+                return Err(());
+            }
         }
         Ok(())
     }

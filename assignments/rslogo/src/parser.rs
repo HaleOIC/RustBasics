@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use crate::statements::{NoParaStatement, Statement, UniStatement};
+use crate::statements::{BinaryStatement, NoParaStatement, Statement, UniStatement};
 
 pub struct Parser {
     lines: Vec<String>,
@@ -66,6 +66,12 @@ impl Parser {
                     let (new_statement, new_index) = UniStatement::new(&self.tokens, index)?;
                     statements.push(Box::new(new_statement));
                     index = new_index + 1;
+                }
+                "MAKE" | "ADDASSIGN" => {
+                    let (new_statement, new_index) = BinaryStatement::new(&self.tokens, index)?;
+                    statements.push(Box::new(new_statement));
+                    index = new_index + 1;
+            
                 }
                 _ => {
                     eprintln!("Unknown command: {}", cur_token);

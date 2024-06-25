@@ -6,6 +6,7 @@ pub struct Pen {
     pos_y: f32,
     degree: i32,
     on_image: bool,
+    color_number: usize,
 }
 
 impl Pen {
@@ -23,6 +24,7 @@ impl Pen {
             pos_y: weight as f32 / 2.0,
             degree: 0,
             on_image: false,
+            color_number: 7,
         }
     }
 
@@ -31,19 +33,24 @@ impl Pen {
     /// use rslogo::pen::Pen;
     /// let mut pen = Pen::new(200, 200);
     /// assert_eq!(pen.set_color(1), true);
+    /// assert_eq!(pen.set_color(16), false);
     /// assert_eq!(pen.set_color(255), false);
+    /// assert_eq!(pen.get_color_number(), 1);
     /// ```
     pub fn set_color(&mut self, code: usize) -> bool {
         if code < 16 {
             self.color = COLORS[code];
+            self.color_number = code;
             true
         } else {
-            self.color = COLORS[0];
             false
         }
     }
     pub fn get_color(&self) -> Color {
         return self.color;
+    }
+    pub fn get_color_number(&self) -> usize {
+        return self.color_number;
     }
 
     /// setter and getter function for the cordinate of the pen

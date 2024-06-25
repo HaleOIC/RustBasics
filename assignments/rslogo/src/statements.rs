@@ -79,7 +79,10 @@ impl UniStatement {
 
 impl Statement for UniStatement {
     fn execute(&self, values: &mut HashMap<String, f32>, pen: &mut Pen, image: &mut Image) -> bool {
-        let val = self.arg.evaluate(values);
+        let val = match self.arg.evaluate(values, &pen) {
+            Some(val) => val,
+            None => return false,
+        };
         let cur_x = pen.get_x();
         let cur_y = pen.get_y();
         match self.command.as_str() {
@@ -165,11 +168,63 @@ impl Statement for UniStatement {
     }
 }
 
-// pub struct BinaryStatement {
-//     command: String,
-//     arg1: Expression,
-//     arg2: Expression,
-// }
+/// Statement with two parameters of type Expression.
+/// The statement should be able to execute itself by given its runtime values.
+/// It contains one kind of statement:
+/// 1. MAKE [arg1] [arg2]
+/// 2. ADDASSIGN [variable] [expression]
+pub struct BinaryStatement {
+    command: String,
+    variable: String,
+    arg: Expression,
+}
+
+impl BinaryStatement {
+    pub fn new(tokens: &Vec<String>, start: usize) -> Option<(BinaryStatement, usize)> {
+        let command = String::from(&tokens[start][..]);
+
+        // make sure not over range
+        if start + 2 >= tokens.len() {
+            return None;
+        }
+
+        // parse variable and expression
+        if !tokens[start + 1].starts_with("\"") {
+            return None;
+        }
+        let variable = String::from(&tokens[start + 1][1..]);
+        let (arg, end) = Expression::parse_expression(tokens, start + 2)?;
+        Some((BinaryStatement { command, variable, arg }, end))
+    }
+}
+
+impl Statement for BinaryStatement {
+    fn execute(&self, values: &mut HashMap<String, f32>, pen: &mut Pen, _image: &mut Image) -> bool {
+        let variable = &self.variable;
+        let val = match self.arg.evaluate(values, &pen) {
+            Some(val) => val,
+            None => return false,
+        };
+        match self.command.as_str() {
+            "MAKE" => {
+                values.insert(variable.to_string(), val);
+                true
+            }
+            "ADDASSIGN" => {
+                if let Some(v) = values.get_mut(variable) {
+                    *v += val;
+                    true
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
+    }
+}
+
+
+
 
 // pub struct IfStatement {
 //     condition: Expression,
