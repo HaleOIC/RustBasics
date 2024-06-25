@@ -145,7 +145,10 @@ impl Expression {
         // case1: if the first token is a number
         let token = &tokens[cur][..];
         if token.starts_with("\"") {
-            return Some((Expression::Value(token[1..].parse::<f32>().unwrap()), cur));
+            return match token[1..].parse::<f32>() {
+                Ok(value) => Some((Expression::Value(value), cur)),
+                Err(_) => {None}
+            };
         }
 
         // case2: if the first token is a variable

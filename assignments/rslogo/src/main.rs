@@ -84,6 +84,8 @@ fn simulation(file_path: &str, mut image: Image) -> Option<Image> {
     
     // new an object for simulation
     let mut simulator = simulator::Simulator::new(&mut parser, &mut image);
-    simulator.simulate();
+    if simulator.simulate().is_err() {
+        return None;
+    }
     Some(image)
 }

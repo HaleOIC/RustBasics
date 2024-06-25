@@ -1,13 +1,11 @@
-use std::collections::HashMap;
 use std::fs::File;
-use std::hash::Hash;
 use std::io::{BufRead, BufReader};
-// use crate::statements::Statement;
+use crate::statements::{NoParaStatement, Statement, UniStatement};
 
 pub struct Parser {
     lines: Vec<String>,
     tokens: Vec<String>,
-    // statements: Vec<Box<dyn Statement>>,
+    statements: Vec<Box<dyn Statement>>,
 }
 
 impl Parser {
@@ -28,9 +26,9 @@ impl Parser {
             }
         }
         Ok(Parser {
-            lines: lines,
+            lines,
             tokens: Vec::new(),
-            // statements: Vec::new(),
+            statements: Vec::new(),
         })
     }
 
@@ -49,41 +47,34 @@ impl Parser {
         }
     }
 
+    pub fn show_statements(&self) -> &Vec<Box<dyn Statement>>{
+        return &self.statements;
+    }
 
-// FORWARD [numpixels:f32]
-// BACK [numpixels:f32]
-// LEFT [numpixels:f32]
-// RIGHT [numpixels:f32]
-// SETPENCOLOR [colorcode:f32]
-// TURN [degrees:f32]
-// SETHEADING [degrees:f32]
-// SETX [location:f32]
-// SETY [location:f32]
-    
-    // pub fn into_statements(&mut self) {
-    //     let mut i = 0;
-    //     while i < self.tokens.len() {
-    //         let token = &self.tokens[i][..];
-    //         match token {
-    //             "PENUP" | "PENDOWN" => {
-    //                 self.statements.push(Box::new(NoParaStatement {
-    //                     command: String::from(token),
-    //                 }));
-    //             }
-    //             "FORWARD" | "BACK" | "LEFT" | "RIGHT" | "TURN" | "SETHEADING" | "SETX" | "SETY" => {
-    //                 let arg = &self.tokens[i + 1][1..]
-    //                 let arg = self.tokens[i + 1] .parse::<f32>().unwrap();
-    //                 self.statements.push(Box::new(UniStatement {
-    //                     command: String::from(token),
-    //                     arg: Expression::Value(arg as f64),
-    //                 }));
-    //                 i += 1;
-    //             }
-    //             _ => {
+    pub fn into_statements(&mut self) -> Option<bool> {
+        let mut index = 0;
+        let mut statements: Vec<Box<dyn Statement>> = Vec::new();
+        while index < self.tokens.len() {
+            let cur_token = &self.tokens[index][..];
+            match cur_token {
+                "PENUP" | "PENDOWN" => {
+                    let (new_statement, new_index) = NoParaStatement::new(&self.tokens, index)?;
+                    statements.push(Box::new(new_statement));
+                    index = new_index + 1;
+                }
+                "FORWARD" | "BACK" | "LEFT" | "RIGHT" | "SETPENCOLOR" | "TURN" | "SETHEADING" | "SETX" | "SETY" => {
+                    let (new_statement, new_index) = UniStatement::new(&self.tokens, index)?;
+                    statements.push(Box::new(new_statement));
+                    index = new_index + 1;
+                }
+                _ => {
+                    eprintln!("Unknown command: {}", cur_token);
+                    return None;
+                }   
+            }
+        }
+        self.statements = statements;
+        Some(true)
 
-    //             }
-    //         }
-
-    //     }
-    // }
+    }
 }
