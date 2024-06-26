@@ -4,8 +4,10 @@
 
 use unsvg::{get_end_coordinates, Image};
 
-use crate::{expression::{Expression, Outcome}, pen::Pen};
-use std::collections::HashMap;
+use crate::{
+    definition::ProcedureDefinition, expression::{Expression, Outcome}, pen::Pen
+};
+use std::{collections::HashMap, rc::Rc};
 
 /// The trait that all statements should implement.
 /// Each statement should be able to execute itself by given its runtime values.
@@ -13,7 +15,12 @@ use std::collections::HashMap;
 /// The runtime values are stored in a hashmap.
 /// The statement should also be able to update the runtime values, pen and image if needed.
 pub trait Statement {
-    fn execute(&self, values: &mut HashMap<String, Outcome>, pen: &mut Pen, image: &mut Image) -> bool;
+    fn execute(
+        &self,
+        values: &mut HashMap<String, Outcome>,
+        pen: &mut Pen,
+        image: &mut Image,
+    ) -> bool;
 }
 
 /// Statement with no parameters.
@@ -78,13 +85,16 @@ impl UniStatement {
 }
 
 impl Statement for UniStatement {
-    fn execute(&self, values: &mut HashMap<String, Outcome>, pen: &mut Pen, image: &mut Image) -> bool {
+    fn execute(
+        &self,
+        values: &mut HashMap<String, Outcome>,
+        pen: &mut Pen,
+        image: &mut Image,
+    ) -> bool {
         let val = match self.arg.evaluate(values, &pen) {
-            Some(val) => {
-                match val {
-                    Outcome::Value(val) => val,
-                    _ => return false,
-                }
+            Some(val) => match val {
+                Outcome::Value(val) => val,
+                _ => return false,
             },
             None => return false,
         };
@@ -256,7 +266,7 @@ pub struct IfStatement {
 }
 
 impl IfStatement {
-    pub fn new(tokens: &Vec<String>, start: usize) -> Option<(IfStatement, usize)> {
+    pub fn new(tokens: &Vec<String>, definitions: &HashMap<String, Rc<ProcedureDefinition>>, start: usize) -> Option<(IfStatement, usize)> {
         let (condition, end) = Expression::parse_expression(tokens, start + 1)?;
         let mut commands = Vec::new();
         let mut i = end + 1;
@@ -267,7 +277,7 @@ impl IfStatement {
         }
         i += 1; // shift to next token start
         while i < tokens.len() && !tokens[i].starts_with("]") {
-            let statement = parse_statement(tokens, &mut i)?;
+            let statement = parse_statement(tokens, &mut i, &definitions)?;
             commands.push(statement);
         }
         if i >= tokens.len() {
@@ -284,13 +294,16 @@ impl IfStatement {
 }
 
 impl Statement for IfStatement {
-    fn execute(&self, values: &mut HashMap<String, Outcome>, pen: &mut Pen, image: &mut Image) -> bool {
+    fn execute(
+        &self,
+        values: &mut HashMap<String, Outcome>,
+        pen: &mut Pen,
+        image: &mut Image,
+    ) -> bool {
         let val = match self.condition.evaluate(values, &pen) {
-            Some(val) => {
-                match val {
-                    Outcome::Bool(val) => val,
-                    _ => return false,
-                }
+            Some(val) => match val {
+                Outcome::Bool(val) => val,
+                _ => return false,
             },
             None => return false,
         };
@@ -312,7 +325,7 @@ pub struct WhileStatement {
 }
 
 impl WhileStatement {
-    pub fn new(tokens: &Vec<String>, start: usize) -> Option<(WhileStatement, usize)> {
+    pub fn new(tokens: &Vec<String>, definitions: &HashMap<String, Rc<ProcedureDefinition>>, start: usize) -> Option<(WhileStatement, usize)> {
         let (condition, end) = Expression::parse_expression(tokens, start + 1)?;
         let mut commands = Vec::new();
         let mut i = end + 1;
@@ -323,7 +336,7 @@ impl WhileStatement {
         }
         i += 1; // shift to next token start
         while i < tokens.len() && !tokens[i].starts_with("]") {
-            let statement = parse_statement(tokens, &mut i)?;
+            let statement = parse_statement(tokens, &mut i, &definitions)?;
             commands.push(statement);
         }
         if i >= tokens.len() {
@@ -340,14 +353,17 @@ impl WhileStatement {
 }
 
 impl Statement for WhileStatement {
-    fn execute(&self, values: &mut HashMap<String, Outcome>, pen: &mut Pen, image: &mut Image) -> bool {
+    fn execute(
+        &self,
+        values: &mut HashMap<String, Outcome>,
+        pen: &mut Pen,
+        image: &mut Image,
+    ) -> bool {
         loop {
             let val = match self.condition.evaluate(values, &pen) {
-                Some(val) => {
-                    match val {
-                        Outcome::Bool(val) => val,
-                        _ => return false,
-                    }
+                Some(val) => match val {
+                    Outcome::Bool(val) => val,
+                    _ => return false,
                 },
                 None => return false,
             };
@@ -365,41 +381,63 @@ impl Statement for WhileStatement {
     }
 }
 
-// pub struct ProcedureStatement {
-//     name: String,
-//     commands: Vec<Box<dyn Statement>>,
-// }
+/// procedure statement (function)
+/// function can have any number of variables
 
-// impl Statement for UniStatement {
-//     fn execute(&self, values: &HashMap<String, f32>) -> Result<(), ()> {
-//         // match self.command.as_str() {
-//         //     "FD" => {
-//         //         let val = self.arg.evaluate(values);
-//         //         println!("FD {}", val);
-//         //         Ok(())
-//         //     }
-//         //     "BK" => {
-//         //         let val = self.arg.evaluate(values);
-//         //         println!("BK {}", val);
-//         //         Ok(())
-//         //     }
-//         //     "RT" => {
-//         //         let val = self.arg.evaluate(values);
-//         //         println!("RT {}", val);
-//         //         Ok(())
-//         //     }
-//         //     "LT" => {
-//         //         let val = self.arg.evaluate(values);
-//         //         println!("LT {}", val);
-//         //         Ok(())
-//         //     }
-//         //     _ => Err(()),
-//         // }
-//         Ok(())
-//     }
-// }
+pub struct ProcedureStatement {
+    args: Vec<Expression>,
+    body: Rc<ProcedureDefinition>,
+}
+impl ProcedureStatement {
+    pub fn new(
+        tokens: &Vec<String>,
+        start: usize,
+        body: &Rc<ProcedureDefinition>,
+    ) -> Option<(ProcedureStatement, usize)> {
+        // make sure it is procedure statement
+        let mut i = start;
+        let arg_num = body.variables.len();
 
-pub fn parse_statement(tokens: &Vec<String>, index: &mut usize) -> Option<Box<dyn Statement>> {
+        // // parse expression
+        let mut args = Vec::new();
+        for _ in 0..arg_num {
+            let (arg, end) = Expression::parse_expression(tokens, i + 1)?;
+            args.push(arg);
+            i = end;
+        }
+        Some((ProcedureStatement { args, body: Rc::clone(&body) }, i))
+    }
+}
+
+impl Statement for ProcedureStatement {
+    fn execute(
+        &self,
+        values: &mut HashMap<String, Outcome>,
+        pen: &mut Pen,
+        image: &mut Image,
+    ) -> bool {
+        let mut new_values = values.clone();
+        for (i, arg) in self.args.iter().enumerate() {
+            let val = match arg.evaluate(values, &pen) {
+                Some(val) => val,
+                None => return false,
+            };
+            new_values.insert(self.body.variables[i].clone(), val);
+        }
+        for command in &self.body.commands {
+            if !command.execute(&mut new_values, pen, image) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+pub fn parse_statement(
+    tokens: &Vec<String>,
+    index: &mut usize,
+    definitions: &HashMap<String, Rc<ProcedureDefinition>>,
+) -> Option<Box<dyn Statement>> {
     let cur_token = &tokens[*index];
     match cur_token.as_str() {
         "PENUP" | "PENDOWN" => {
@@ -419,18 +457,26 @@ pub fn parse_statement(tokens: &Vec<String>, index: &mut usize) -> Option<Box<dy
             Some(Box::new(new_statement))
         }
         "IF" => {
-            let (new_statement, new_index) = IfStatement::new(tokens, *index)?;
+            let (new_statement, new_index) = IfStatement::new(tokens, definitions, *index)?;
             *index = new_index + 1;
             Some(Box::new(new_statement))
         }
         "WHILE" => {
-            let (new_statement, new_index) = WhileStatement::new(tokens, *index)?;
+            let (new_statement, new_index) = WhileStatement::new(tokens, definitions, *index)?;
             *index = new_index + 1;
             Some(Box::new(new_statement))
         }
         _ => {
-            eprintln!("Unknown command: {}", cur_token);
-            None
+            // maybe calling function
+            if definitions.contains_key(cur_token) {
+                let (new_statement, new_index) =
+                    ProcedureStatement::new(tokens, *index, definitions.get(cur_token).unwrap())?;
+                *index = new_index + 1;
+                Some(Box::new(new_statement))
+            } else {
+                eprintln!("Unknown command: {}", cur_token);
+                None
+            }
         }
     }
 }

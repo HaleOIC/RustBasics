@@ -21,13 +21,20 @@ impl<'a, 'b> Simulator<'a, 'b> {
         }
     }
 
-    pub fn simulate(&mut self) -> Result<(), ()>{
-        if self.parser.into_statements().is_none() {
-            return Err(());
+    pub fn simulate(&mut self) -> Result<(), String>{
+        // parse tokens into procedure
+        if self.parser.parse_procedure().is_none() {
+            return Err("Failed to parse procedure".to_string());
         }
+        
+        // parse left tokens into statements
+        if self.parser.into_statements().is_none() {
+            return Err("Failed to parse statements".to_string());
+        }
+
         for statement in self.parser.show_statements() {
             if !statement.execute(&mut self.values, &mut self.pen, self.image) {
-                return Err(());
+                return Err("Failed to execute statement".to_string());
             }
         }
         Ok(())
