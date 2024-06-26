@@ -39,7 +39,7 @@
                 }
             },
             "args": [
-				"logo_examples/3_05_spiral.lg",
+				"logo_examples/5_03_invalid_err.lg",
 				"output.svg",
 				"200",
 				"200"

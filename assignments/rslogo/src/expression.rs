@@ -100,7 +100,13 @@ impl Expression {
                     ArithmeticOperator::Add => Some(Outcome::Value(arg1 + arg2)),
                     ArithmeticOperator::Sub => Some(Outcome::Value(arg1 - arg2)),
                     ArithmeticOperator::Mul => Some(Outcome::Value(arg1 * arg2)),
-                    ArithmeticOperator::Div => Some(Outcome::Value(arg1 / arg2)),
+                    ArithmeticOperator::Div => {
+                        if arg2 == 0.0 {
+                            None
+                        } else {
+                            Some(Outcome::Value(arg1 / arg2))
+                        }
+                    }
                 }
             }
             // case4: evaluate the comparison expression
@@ -289,7 +295,10 @@ mod tests {
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let values = HashMap::new();
         let pen = pen::Pen::new(200, 200);
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(3.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(3.0)
+        );
     }
 
     #[test]
@@ -299,7 +308,10 @@ mod tests {
         let mut values = HashMap::new();
         values.insert("x".to_string(), Outcome::Value(10.0));
         let pen = pen::Pen::new(200, 200);
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(10.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(10.0)
+        );
     }
 
     #[test]
@@ -309,7 +321,10 @@ mod tests {
         let values = HashMap::new();
         let pen = pen::Pen::new(200, 200);
 
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(8.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(8.0)
+        );
     }
 
     #[test]
@@ -319,7 +334,10 @@ mod tests {
         let values = HashMap::new();
         let pen = pen::Pen::new(200, 200);
 
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(true));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Bool(true)
+        );
     }
 
     #[test]
@@ -336,7 +354,10 @@ mod tests {
         let pen = pen::Pen::new(200, 200);
 
         // This should evaluate 2 + (3 * 4) = 14
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(14.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(14.0)
+        );
     }
 
     #[test]
@@ -353,7 +374,10 @@ mod tests {
         let pen = pen::Pen::new(200, 200);
 
         // This should evaluate (2 + 3) == 5 to be true, hence 1.0
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(true));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Bool(true)
+        );
     }
 
     #[test]
@@ -372,7 +396,10 @@ mod tests {
         let pen = pen::Pen::new(200, 200);
 
         // This should evaluate (5 != 3) AND (2 == 2), both true, hence 1.0
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(true));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Bool(true)
+        );
     }
 
     #[test]
@@ -421,7 +448,10 @@ mod tests {
         // (5 + (4 * 5)) == 15
         // which evaluates to:
         // (5 + 20) == 15 -> 25 == 15 -> false -> 0.0
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(false));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Bool(false)
+        );
     }
 
     #[test]
@@ -434,21 +464,81 @@ mod tests {
         // Test XCOR query
         let tokens = vec!["XCOR".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(100.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(100.0)
+        );
 
         // Test YCOR query
         let tokens = vec!["YCOR".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(150.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(150.0)
+        );
 
         // Test HEADING query
         let tokens = vec!["HEADING".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(270.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(270.0)
+        );
 
         // Test COLOR query
         let tokens = vec!["COLOR".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(5.0));
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Value(5.0)
+        );
+    }
+
+    #[test]
+    fn test_division_by_zero() {
+        let tokens = vec!["/".to_string(), "\"10.0".to_string(), "\"0.0".to_string()];
+        let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
+        let values = HashMap::new();
+        let pen = pen::Pen::new(200, 200);
+
+        // Expecting the system to handle division by zero gracefully, perhaps by returning None or an error outcome
+        assert!(expression.evaluate(&values, &pen).is_none());
+    }
+
+    #[test]
+    fn test_complex_nested_logical_expressions() {
+        let tokens = vec![
+            "OR".to_string(),
+            "AND".to_string(),
+            "GT".to_string(),
+            "\"15.0".to_string(),
+            "\"10.0".to_string(),
+            "LT".to_string(),
+            "\"5.0".to_string(),
+            "\"3.0".to_string(),
+            "EQ".to_string(),
+            "\"1.0".to_string(),
+            "\"1.0".to_string(),
+        ];
+        let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
+        let values = HashMap::new();
+        let pen = pen::Pen::new(200, 200);
+
+        // This should evaluate ((15 > 10) AND (5 < 3)) OR (1 == 1)
+        // which simplifies to (true AND false) OR true
+        // which evaluates to false OR true -> true
+        assert_eq!(
+            expression.evaluate(&values, &pen).unwrap(),
+            Outcome::Bool(true)
+        );
+    }
+
+    #[test]
+    fn test_unsupported_syntax() {
+        let tokens = vec!["%".to_string(), "\"20.0".to_string(), "\"5.0".to_string()];
+        let result = Expression::parse_expression(&tokens, 0);
+
+        // The expression contains an unsupported operator '%'
+        assert!(result.is_none());
     }
 }
