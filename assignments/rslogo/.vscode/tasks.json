@@ -1,0 +1,24 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cargo",
+			"command": "cargo",
+			"args": [
+				"run",
+				"logo_examples/3_05_spiral.lg",
+				"output.svg",
+				"200",
+				"200"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "rust: cargo run",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}

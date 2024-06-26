@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{parser, pen};
+use crate::{expression::Outcome, parser, pen};
 use unsvg::Image;
 
 pub struct Simulator<'a, 'b> {
     parser: &'a mut parser::Parser,
     pen: pen::Pen,
     image: &'b mut Image,
-    values: HashMap<String, f32>,
+    values: HashMap<String, Outcome>,
 }
 
 impl<'a, 'b> Simulator<'a, 'b> {

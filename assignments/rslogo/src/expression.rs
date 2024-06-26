@@ -56,10 +56,11 @@ pub struct CompareExpression {
 }
 
 pub struct QueryExpression {
-    command: String, 
+    command: String,
 }
 
 pub enum Expression {
+    Bool(bool),
     Value(f32),
     Variable(String),
     Arithmetic(MathExpression),
@@ -67,96 +68,132 @@ pub enum Expression {
     Query(QueryExpression),
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum Outcome {
+    Value(f32),
+    Bool(bool),
+}
+
 impl Expression {
-    pub fn evaluate(&self, values: &HashMap<String, f32>, pen: &Pen) -> Option<f32> {
+    pub fn evaluate(&self, values: &HashMap<String, Outcome>, pen: &Pen) -> Option<Outcome> {
         match self {
+            // case0: return boolean type
+            Expression::Bool(b) => Some(Outcome::Bool(*b)),
             // case1: return itself
-            Expression::Value(v) => Some(*v),
+            Expression::Value(v) => Some(Outcome::Value(*v)),
             // case2: return value of variable
             Expression::Variable(v) => match values.get(v) {
-                Some(val) => Some(*val),
-                None => None
+                Some(val) => Some(val.clone()),
+                None => None,
             },
             // case3: evaluate the math expression
             Expression::Arithmetic(e) => {
-                let arg1 = e.arg1.evaluate(values, pen)?;
-                let arg2 = e.arg2.evaluate(values, pen)?;
+                let arg1 = match e.arg1.evaluate(values, pen)? {
+                    Outcome::Value(v) => v,
+                    _ => return None,
+                };
+                let arg2 = match e.arg2.evaluate(values, pen)? {
+                    Outcome::Value(v) => v,
+                    _ => return None,
+                };
                 match e.operator {
-                    ArithmeticOperator::Add => Some(arg1 + arg2),
-                    ArithmeticOperator::Sub => Some(arg1 - arg2),
-                    ArithmeticOperator::Mul => Some(arg1 * arg2),
-                    ArithmeticOperator::Div => Some(arg1 / arg2),
+                    ArithmeticOperator::Add => Some(Outcome::Value(arg1 + arg2)),
+                    ArithmeticOperator::Sub => Some(Outcome::Value(arg1 - arg2)),
+                    ArithmeticOperator::Mul => Some(Outcome::Value(arg1 * arg2)),
+                    ArithmeticOperator::Div => Some(Outcome::Value(arg1 / arg2)),
                 }
             }
             // case4: evaluate the comparison expression
             Expression::Comparison(e) => {
-                let arg1 = e.arg1.evaluate(values, pen)?;
-                let arg2 = e.arg2.evaluate(values, pen)?;
-                match e.operator {
-                    CompareOperator::Eq => {
-                        if arg1 == arg2 {
-                            Some(1.0)
-                        } else {
-                            Some(0.0)
+                if let Outcome::Value(arg1) = e.arg1.evaluate(values, &pen)? {
+                    if let Outcome::Value(arg2) = e.arg2.evaluate(values, &pen)? {
+                        match e.operator {
+                            CompareOperator::Eq => {
+                                if arg1 == arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            CompareOperator::Neq => {
+                                if arg1 != arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            CompareOperator::Gt => {
+                                if arg1 > arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            CompareOperator::Lt => {
+                                if arg1 < arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            _ => {
+                                return None;
+                            }
                         }
+                    } else {
+                        return None;
                     }
-                    CompareOperator::Neq => {
-                        if arg1 != arg2 {
-                            Some(1.0)
-                        } else {
-                            Some(0.0)
+                } else if let Outcome::Bool(arg1) = e.arg1.evaluate(values, &pen)? {
+                    if let Outcome::Bool(arg2) = e.arg2.evaluate(values, &pen)? {
+                        match e.operator {
+                            CompareOperator::Eq => {
+                                if arg1 == arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            CompareOperator::Neq => {
+                                if arg1 != arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            CompareOperator::AND => {
+                                if arg1 && arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            CompareOperator::OR => {
+                                if arg1 || arg2 {
+                                    return Some(Outcome::Bool(true));
+                                } else {
+                                    return Some(Outcome::Bool(false));
+                                }
+                            }
+                            _ => {
+                                return None;
+                            }
                         }
+                    } else {
+                        return None;
                     }
-                    CompareOperator::Gt => {
-                        if arg1 > arg2 {
-                            Some(1.0)
-                        } else {
-                            Some(0.0)
-                        }
-                    }
-                    CompareOperator::Lt => {
-                        if arg1 < arg2 {
-                            Some(1.0)
-                        } else {
-                            Some(0.0)
-                        }
-                    }
-                    CompareOperator::AND => {
-                        if arg1 != 0.0 && arg2 != 0.0 {
-                            Some(1.0)
-                        } else {
-                            Some(0.0)
-                        }
-                    }
-                    CompareOperator::OR => {
-                        if arg1 != 0.0 || arg2 != 0.0 {
-                            Some(1.0)
-                        } else {
-                            Some(0.0)
-                        }
-                    }
+                } else {
+                    return None;
                 }
             }
+
             // Case 5: Query for pen status
-            Expression::Query(e) => {
-                match e.command.as_str() {
-                    "XCOR" => {
-                        Some(pen.get_x())
-                    }
-                    "YCOR" => {
-                        Some(pen.get_y())
-                    }
-                    "HEADING" => {
-                        Some(pen.get_degree() as f32)
-                    }
-                    "COLOR" => {
-                        Some(pen.get_color_number() as f32)
-                    }
-                    _ => {
-                        None
-                    }
-                }
-            }
+            Expression::Query(e) => match e.command.as_str() {
+                "XCOR" => Some(Outcome::Value(pen.get_x())),
+                "YCOR" => Some(Outcome::Value(pen.get_y())),
+                "HEADING" => Some(Outcome::Value(pen.get_degree() as f32)),
+                "COLOR" => Some(Outcome::Value(pen.get_color_number() as f32)),
+                _ => None,
+            },
         }
     }
 }
@@ -172,10 +209,21 @@ impl Expression {
         // case1: if the first token is a number
         let token = &tokens[cur][..];
         if token.starts_with("\"") {
-            return match token[1..].parse::<f32>() {
-                Ok(value) => Some((Expression::Value(value), cur)),
-                Err(_) => {None}
-            };
+            // parse the number
+            if let Ok(value) = token[1..].parse::<f32>() {
+                return Some((Expression::Value(value), cur));
+            }
+            // parse the boolean
+            if &token[1..] == "TRUE" {
+                return Some((Expression::Bool(true), cur));
+            }
+            if &token[1..] == "FALSE" {
+                return Some((Expression::Bool(false), cur));
+            }
+            if let Ok(value) = token[1..].parse::<bool>() {
+                return Some((Expression::Bool(value), cur));
+            }
+            return None;
         }
 
         // case2: if the first token is a variable
@@ -216,7 +264,12 @@ impl Expression {
         // case5: if the first token is a query expression
         let strings = ["XCOR", "YCOR", "HEADING", "COLOR"];
         if strings.contains(&token) {
-            return Some((Expression::Query(QueryExpression {command: String::from(token)}), cur));
+            return Some((
+                Expression::Query(QueryExpression {
+                    command: String::from(token),
+                }),
+                cur,
+            ));
         }
 
         // default case: None
@@ -236,7 +289,7 @@ mod tests {
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let values = HashMap::new();
         let pen = pen::Pen::new(200, 200);
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 3.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(3.0));
     }
 
     #[test]
@@ -244,9 +297,9 @@ mod tests {
         let tokens = vec![":x".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let mut values = HashMap::new();
-        values.insert("x".to_string(), 10.0);
+        values.insert("x".to_string(), Outcome::Value(10.0));
         let pen = pen::Pen::new(200, 200);
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 10.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(10.0));
     }
 
     #[test]
@@ -256,7 +309,7 @@ mod tests {
         let values = HashMap::new();
         let pen = pen::Pen::new(200, 200);
 
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 8.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(8.0));
     }
 
     #[test]
@@ -266,7 +319,7 @@ mod tests {
         let values = HashMap::new();
         let pen = pen::Pen::new(200, 200);
 
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 1.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(true));
     }
 
     #[test]
@@ -283,7 +336,7 @@ mod tests {
         let pen = pen::Pen::new(200, 200);
 
         // This should evaluate 2 + (3 * 4) = 14
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 14.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(14.0));
     }
 
     #[test]
@@ -300,7 +353,7 @@ mod tests {
         let pen = pen::Pen::new(200, 200);
 
         // This should evaluate (2 + 3) == 5 to be true, hence 1.0
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 1.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(true));
     }
 
     #[test]
@@ -319,7 +372,7 @@ mod tests {
         let pen = pen::Pen::new(200, 200);
 
         // This should evaluate (5 != 3) AND (2 == 2), both true, hence 1.0
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 1.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(true));
     }
 
     #[test]
@@ -358,8 +411,8 @@ mod tests {
         ];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
         let mut values = HashMap::new();
-        values.insert("x".to_string(), 5.0); // x = 5
-        values.insert("y".to_string(), 4.0); // y = 4
+        values.insert("x".to_string(), Outcome::Value(5.0)); // x = 5
+        values.insert("y".to_string(), Outcome::Value(4.0)); // y = 4
         let pen = pen::Pen::new(200, 200);
 
         // The expression is:
@@ -368,7 +421,7 @@ mod tests {
         // (5 + (4 * 5)) == 15
         // which evaluates to:
         // (5 + 20) == 15 -> 25 == 15 -> false -> 0.0
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 0.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Bool(false));
     }
 
     #[test]
@@ -381,21 +434,21 @@ mod tests {
         // Test XCOR query
         let tokens = vec!["XCOR".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 100.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(100.0));
 
         // Test YCOR query
         let tokens = vec!["YCOR".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 150.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(150.0));
 
         // Test HEADING query
         let tokens = vec!["HEADING".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 270.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(270.0));
 
         // Test COLOR query
         let tokens = vec!["COLOR".to_string()];
         let (expression, _pos) = Expression::parse_expression(&tokens, 0).unwrap();
-        assert_eq!(expression.evaluate(&values, &pen).unwrap(), 5.0);
+        assert_eq!(expression.evaluate(&values, &pen).unwrap(), Outcome::Value(5.0));
     }
 }

@@ -3,5 +3,67 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": []
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'rslogo'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=rslogo"
+                ],
+                "filter": {
+                    "name": "rslogo",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'rslogo'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=rslogo",
+                    "--package=rslogo"
+                ],
+                "filter": {
+                    "name": "rslogo",
+                    "kind": "bin"
+                }
+            },
+            "args": [
+				"logo_examples/3_05_spiral.lg",
+				"output.svg",
+				"200",
+				"200"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'rslogo'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=rslogo",
+                    "--package=rslogo"
+                ],
+                "filter": {
+                    "name": "rslogo",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
 }

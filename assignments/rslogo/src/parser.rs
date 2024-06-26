@@ -1,6 +1,6 @@
+use crate::statements::{parse_statement, Statement};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use crate::statements::{BinaryStatement, NoParaStatement, Statement, UniStatement};
 
 pub struct Parser {
     lines: Vec<String>,
@@ -47,7 +47,7 @@ impl Parser {
         }
     }
 
-    pub fn show_statements(&self) -> &Vec<Box<dyn Statement>>{
+    pub fn show_statements(&self) -> &Vec<Box<dyn Statement>> {
         return &self.statements;
     }
 
@@ -55,32 +55,10 @@ impl Parser {
         let mut index = 0;
         let mut statements: Vec<Box<dyn Statement>> = Vec::new();
         while index < self.tokens.len() {
-            let cur_token = &self.tokens[index][..];
-            match cur_token {
-                "PENUP" | "PENDOWN" => {
-                    let (new_statement, new_index) = NoParaStatement::new(&self.tokens, index)?;
-                    statements.push(Box::new(new_statement));
-                    index = new_index + 1;
-                }
-                "FORWARD" | "BACK" | "LEFT" | "RIGHT" | "SETPENCOLOR" | "TURN" | "SETHEADING" | "SETX" | "SETY" => {
-                    let (new_statement, new_index) = UniStatement::new(&self.tokens, index)?;
-                    statements.push(Box::new(new_statement));
-                    index = new_index + 1;
-                }
-                "MAKE" | "ADDASSIGN" => {
-                    let (new_statement, new_index) = BinaryStatement::new(&self.tokens, index)?;
-                    statements.push(Box::new(new_statement));
-                    index = new_index + 1;
-            
-                }
-                _ => {
-                    eprintln!("Unknown command: {}", cur_token);
-                    return None;
-                }   
-            }
+            let new_statement = parse_statement(&self.tokens, &mut index)?;
+            statements.push(new_statement);
         }
         self.statements = statements;
         Some(true)
-
     }
 }
