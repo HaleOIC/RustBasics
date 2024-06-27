@@ -17,16 +17,16 @@ impl<'a, 'b> Simulator<'a, 'b> {
             parser,
             pen: pen::Pen::new(h, w),
             image,
-            values: HashMap::new()
+            values: HashMap::new(),
         }
     }
 
-    pub fn simulate(&mut self) -> Result<(), String>{
+    pub fn simulate(&mut self) -> Result<(), String> {
         // parse tokens into procedure
         if self.parser.parse_procedure().is_none() {
             return Err("Failed to parse procedure".to_string());
         }
-        
+
         // parse left tokens into statements
         if self.parser.into_statements().is_none() {
             return Err("Failed to parse statements".to_string());

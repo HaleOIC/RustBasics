@@ -5,7 +5,9 @@
 use unsvg::{get_end_coordinates, Image};
 
 use crate::{
-    definition::ProcedureDefinition, expression::{Expression, Outcome}, pen::Pen
+    definition::ProcedureDefinition,
+    expression::{Expression, Outcome},
+    pen::Pen,
 };
 use std::{collections::HashMap, rc::Rc};
 
@@ -266,7 +268,11 @@ pub struct IfStatement {
 }
 
 impl IfStatement {
-    pub fn new(tokens: &Vec<String>, definitions: &HashMap<String, Rc<ProcedureDefinition>>, start: usize) -> Option<(IfStatement, usize)> {
+    pub fn new(
+        tokens: &Vec<String>,
+        definitions: &HashMap<String, Rc<ProcedureDefinition>>,
+        start: usize,
+    ) -> Option<(IfStatement, usize)> {
         let (condition, end) = Expression::parse_expression(tokens, start + 1)?;
         let mut commands = Vec::new();
         let mut i = end + 1;
@@ -325,7 +331,11 @@ pub struct WhileStatement {
 }
 
 impl WhileStatement {
-    pub fn new(tokens: &Vec<String>, definitions: &HashMap<String, Rc<ProcedureDefinition>>, start: usize) -> Option<(WhileStatement, usize)> {
+    pub fn new(
+        tokens: &Vec<String>,
+        definitions: &HashMap<String, Rc<ProcedureDefinition>>,
+        start: usize,
+    ) -> Option<(WhileStatement, usize)> {
         let (condition, end) = Expression::parse_expression(tokens, start + 1)?;
         let mut commands = Vec::new();
         let mut i = end + 1;
@@ -405,7 +415,13 @@ impl ProcedureStatement {
             args.push(arg);
             i = end;
         }
-        Some((ProcedureStatement { args, body: Rc::clone(&body) }, i))
+        Some((
+            ProcedureStatement {
+                args,
+                body: Rc::clone(&body),
+            },
+            i,
+        ))
     }
 }
 
@@ -565,7 +581,7 @@ mod tests {
         assert!(uni_statement.execute(&mut values, &mut pen, &mut image));
         assert_eq!(pen.get_x(), 100.0);
     }
-    
+
     // Setup a mock function to replace real image and pen behavior in tests
     fn setup_pen_and_image() -> (Pen, Image) {
         (Pen::new(100, 100), Image::new(200, 200))
@@ -596,14 +612,19 @@ mod tests {
         let mut values = HashMap::new();
         values.insert("cond".to_string(), Outcome::Bool(true));
         let condition = Expression::Variable("cond".to_string());
-        let command = Box::new(NoParaStatement { command: "PENDOWN".to_string() });
+        let command = Box::new(NoParaStatement {
+            command: "PENDOWN".to_string(),
+        });
         let if_statement = IfStatement {
             condition,
             commands: vec![command],
         };
 
         assert!(if_statement.execute(&mut values, &mut pen, &mut image));
-        assert!(pen.get_on_image(), "Pen should be down if condition is true");
+        assert!(
+            pen.get_on_image(),
+            "Pen should be down if condition is true"
+        );
     }
 
     #[test]
@@ -612,7 +633,9 @@ mod tests {
         let mut values = HashMap::new();
         values.insert("loop".to_string(), Outcome::Bool(true));
         let condition = Expression::Variable("loop".to_string());
-        let command = Box::new(NoParaStatement { command: "PENDOWN".to_string() });
+        let command = Box::new(NoParaStatement {
+            command: "PENDOWN".to_string(),
+        });
         let while_statement = WhileStatement {
             condition,
             commands: vec![command],
@@ -622,6 +645,9 @@ mod tests {
         values.insert("loop".to_string(), Outcome::Bool(false));
         assert!(while_statement.execute(&mut values, &mut pen, &mut image));
         // Check state to ensure loop exited correctly
-        assert!(!pen.get_on_image(), "Pen should remain up if condition is false initially");
+        assert!(
+            !pen.get_on_image(),
+            "Pen should remain up if condition is false initially"
+        );
     }
 }

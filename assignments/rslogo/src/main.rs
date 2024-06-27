@@ -81,7 +81,7 @@ fn simulation(file_path: &str, mut image: Image) -> Option<Image> {
 
     // convert lines into tokens
     parser.into_tokens();
-    
+
     // new an object for simulation
     let mut simulator = simulator::Simulator::new(&mut parser, &mut image);
     if simulator.simulate().is_err() {

@@ -1,5 +1,5 @@
-use crate::statements::{parse_statement, Statement};
 use crate::definition::ProcedureDefinition;
+use crate::statements::{parse_statement, Statement};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -59,12 +59,14 @@ impl Parser {
     }
 
     /// convert tokens into statements
-    pub fn into_statements(&mut self) -> Option<bool> {        
+    pub fn into_statements(&mut self) -> Option<bool> {
         let mut index = 0;
         let mut statements: Vec<Box<dyn Statement>> = Vec::new();
         while index < self.tokens_statements.len() {
             // parse statement
-            if let Some(new_statement) = parse_statement(&self.tokens_statements, &mut index, &self.definitions) {
+            if let Some(new_statement) =
+                parse_statement(&self.tokens_statements, &mut index, &self.definitions)
+            {
                 statements.push(new_statement);
             } else {
                 return None;
@@ -81,7 +83,8 @@ impl Parser {
         while index < self.tokens.len() {
             // parse procedure definition
             if &self.tokens[index] == "TO" {
-                let new_definition = ProcedureDefinition::new(&self.tokens, &mut index, &definitions)?;
+                let new_definition =
+                    ProcedureDefinition::new(&self.tokens, &mut index, &definitions)?;
                 definitions.insert(new_definition.name.clone(), Rc::new(new_definition));
             } else {
                 tokens_left.push(self.tokens[index].clone());
