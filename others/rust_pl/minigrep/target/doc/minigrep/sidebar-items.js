@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["run","search","search_case_insensitive"],"struct":["Config"]};
