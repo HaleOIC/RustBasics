@@ -25,9 +25,16 @@ struct Hook {
 }
 
 impl Hook {
-    // TODO: implement the new method
+    fn new(num_left: u32, callback: impl Fn(&mut Cpu) + 'static) -> Self {
+        Hook {
+            num_left,
+            callback: Rc::new(callback),
+        }
+    }
 
-    // TODO: implement a call method
+    fn call(&self, cpu: &mut Cpu) {
+        (self.callback)(cpu);
+    }
 }
 
 enum Instruction<F: Fn(&Cpu) -> bool> {
@@ -53,6 +60,7 @@ enum Instruction<F: Fn(&Cpu) -> bool> {
 struct Cpu {
     current_instruction: InstructionNumber,
     accumulator: u32,
+    hooks: Vec<Hook>,
 }
 
 impl Cpu {
@@ -60,11 +68,21 @@ impl Cpu {
         Cpu {
             current_instruction: InstructionNumber(0),
             accumulator: 0,
+            hooks: Vec::new(),
         }
     }
 
     fn run<F: Fn(&Cpu) -> bool>(&mut self, instructions: Vec<Instruction<F>>) {
         loop {
+            for i in 0..self.hooks.len() {
+                let hook = self.hooks[i].clone();
+                if hook.num_left == 0 {
+                    hook.call(self);
+                    self.hooks.remove(i);
+                } else {
+                    self.hooks[i].num_left -= 1;
+                }
+            }
             let instruction = &instructions[self.current_instruction.0 as usize];
             match instruction {
                 Instruction::Nop => {
@@ -84,7 +102,7 @@ impl Cpu {
                 }
                 Instruction::Callback(hook) => {
                     println!("\t...callback instruction");
-                    //TODO: implement this
+                    self.hooks.push(hook.clone());
                 }
                 Instruction::JumpIfCondition(condition, n) => {
                     println!("\t...conditional jump");

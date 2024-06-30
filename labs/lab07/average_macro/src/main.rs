@@ -1,6 +1,17 @@
 
-// YOUR MACRO HERE
-
+macro_rules! avg {
+    ($($exp:expr),*) => {
+        {
+            let mut sum = 0;
+            let mut len = 0;
+            $(
+                sum = sum + $exp;
+                len += 1;
+            )*
+            sum / len
+        }
+    };
+}
 
 // DO NOT CHANGE
 fn main() {

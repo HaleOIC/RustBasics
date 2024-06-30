@@ -1,5 +1,13 @@
-//TODO: Your curry! macro here:
-
+macro_rules! curry {
+    (_, $body: block) => {
+        $body
+    };
+    (($arg:ident: $type:ty) => $(($args:ident: $types:ty) => )* _, $body:block) => {
+        move |$arg: $type| {
+            curry!($(($args: $types)=>)* _, $body)
+        }
+    }
+}
 
 ////////// DO NOT CHANGE BELOW HERE /////////
 

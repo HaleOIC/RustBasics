@@ -5,7 +5,13 @@ pub enum MyOption {
 }
 
 impl MyOption {
-    // TODO - implement map
+    fn map(&self, f: fn(i32) -> i32) -> Self {
+        if let MyOption::Some(val) = self {
+            MyOption::Some(f(*val))
+        } else {
+            MyOption::None
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -14,8 +20,17 @@ pub struct MyVec {
 }
 
 impl MyVec {
-    // TODO - implement for_each
-    // TODO - implement map
+    fn for_each(&self, f: impl Fn(i32)) {
+        for value in &self.items {
+            f(*value);
+        }
+    }
+
+    fn map(&mut self, mut f: impl FnMut(i32) -> i32) {
+        for value in &mut self.items {
+            *value = f(*value);
+        }
+    }
 }
 
 fn main() {
