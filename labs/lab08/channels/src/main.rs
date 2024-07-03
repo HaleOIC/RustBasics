@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{mpsc::channel, Arc};
 
 use itertools::Itertools;
 mod test;
@@ -32,16 +32,32 @@ fn main() {
     // first, split up the digits_operators into 6 vecs
     // using the chunks method
     std::thread::scope(|scope| {
-        for chunk in &digits_operators.into_iter().chunks(6) {
+        let (tx, rx) = channel();
+        let mut index = 0;
+        for chunk in &digits_operators.into_iter().chunks(length / 6) {
             let chunk = Arc::new(chunk.collect::<Vec<_>>());
+            let tx = tx.clone();
+            index += 1;
             scope.spawn(move || {
+                let mut cnt = 0;
                 for (digits, operators) in chunk.iter() {
                     // go through one combination of
                     // operators and see if it works
-                    let _ = calculate(digits.clone(), operators.clone());
+                    let result = calculate(digits.clone(), operators.clone());
+                    if result.is_ok() {
+                        cnt += 1;
+                    }
                 }
+                let _ = tx.send((index, cnt));
             });
         }
+        let mut total = 0;
+        for _ in 0..6 {
+            let (id, cnt) =  rx.recv().unwrap();
+            println!("Thread {} found {} combinations", id, cnt);
+            total += cnt;
+        }
+        println!("Total: {}", total);
     });
 
 
@@ -70,9 +86,10 @@ fn calculate(digits: Vec<i32>, operators: Vec<char>) -> Result<(), ()> {
             "{} {} {} {} {} {} {} {} {} = 10",
             num1, op1, num2, op2, num3, op3, num4, op4, num5
         );
+        return Ok(());
     }
 
-    Ok(())
+    Err(())
 }
 
 // DO NOT MODIFY

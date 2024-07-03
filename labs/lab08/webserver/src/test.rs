@@ -12,10 +12,10 @@ fn test() {
     // check counter is 1
     // it should not be possible for these tests to fail, but to work in browser.
 
-    let port = std::env::args().nth(2).unwrap_or("8081".to_string());
+    let port = std::env::args().nth(2).unwrap_or("12345".to_string());
 
-    let mut build = Command::new("6991")
-        .args(["cargo", "build"])
+    let mut build = Command::new("cargo")
+        .args(["build"])
         .spawn()
         .unwrap();
 

@@ -7,12 +7,13 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 // hint, hint
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 struct State {
     counter: i32,
 }
 
-fn handle_client(mut stream: TcpStream) {
+fn handle_client(mut stream: TcpStream, mutex: Arc<Mutex<State>>) {
     // setup buffer, and read from stream into buffer
     let mut buffer = [0; 1024];
     stream.read(&mut buffer).unwrap();
@@ -25,14 +26,23 @@ fn handle_client(mut stream: TcpStream) {
     let header = split.next().unwrap();
 
     if header == "POST /counter HTTP/1.1" {
-        //TODO: increment the counter
+        let mut inner = mutex.lock().unwrap();
+        inner.counter += 1;
+    }
+
+    let counter;
+    {
+        let inner = mutex.lock().unwrap();
+        counter = inner.counter;
     }
 
     let file = include_bytes!("../index.html");
+    let mut content = String::from_utf8_lossy(file).to_string();
 
-    // TODO: replace triple brackets in file with the counter in state (array of bytes)
-    //      - you should make sure your resulting content is still called file
-    //      - or the below code will not work
+    // Replace triple curly braces with the counter value
+    content = content.replace("{{{ counter }}}", &counter.to_string());
+
+    let file = content.as_bytes();
 
     // DONT CHANGE ME
     let response = format!(
@@ -47,18 +57,21 @@ fn handle_client(mut stream: TcpStream) {
 }
 
 fn main() -> std::io::Result<()> {
-    let port = std::env::args().nth(1).unwrap_or("8081".to_string());
+    let port = std::env::args().nth(1).unwrap_or("12345".to_string());
     let listener = TcpListener::bind(format!("127.0.0.1:{port}"))?;
 
     println!("Server running on port {}", port);
-    // TODO: create new state, so that it can be safely
-    //      shared between threads
+    let mutex = Arc::new(Mutex::new(State { counter: 0 }));
 
     // accept connections and process them serially
     for stream in listener.incoming() {
-        // TODO: spawn a thread for each connection
-        // TODO: pass the state to the thread (and the handle_client fn)
-        handle_client(stream.unwrap());
+        // spawn a thread for each connection
+        let mutex = Arc::clone(&mutex);
+        thread::spawn(move || {
+            handle_client(stream.unwrap(), mutex);
+        })
+        .join()
+        .unwrap();
     }
     Ok(())
 }

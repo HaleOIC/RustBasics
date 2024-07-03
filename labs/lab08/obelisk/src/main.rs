@@ -1,4 +1,5 @@
 use axum::{
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -17,7 +18,9 @@ async fn main() {
         // `GET /ping` goes to the `ping` function
         .route("/ping", get(ping))
         // `POST /users` goes to `create_user`
-        .route("/users", post(create_user));
+        .route("/users", post(create_user))
+        // `GET /hello` goes to the `hello` function
+        .route("/hello/:name", get(hello));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
@@ -28,7 +31,7 @@ async fn main() {
         .unwrap();
 }
 
-// A basic route handler that returns a static 
+// A basic route handler that returns a static
 // string, "pong"
 async fn ping() -> &'static str {
     "pong"
@@ -71,6 +74,9 @@ struct User {
     username: String,
 }
 
-
-// TODO: Add a route handler for the `/hello/:name` route
+// a route handler for the `/hello/:name` route
 // that returns a string of "hello {name}"
+
+async fn hello(Path(name): Path<String>) -> impl IntoResponse {
+    format!("hello {}", name)
+}
