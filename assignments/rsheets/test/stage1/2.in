@@ -1,0 +1,4 @@
+set B2 10
+get B2
+set F6 sleep_then(500, 15)
+get F6

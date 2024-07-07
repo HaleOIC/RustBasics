@@ -1,0 +1,2 @@
+set D4 "abc" + "def"
+get D4

@@ -1,0 +1,11 @@
+set A1 16 + 3 + 5
+get A1
+set A2 sleep_then(500, 15)
+set A3 10
+set A4 7
+get A3
+set B1 16
+set B2 10
+set B4 5
+set A6 sum(A1_B4)
+get A6
