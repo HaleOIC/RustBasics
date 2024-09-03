@@ -7,7 +7,7 @@ const USAGE_STR: &str = "Usage: cargo run -- <x> <y> <z>";
 #[link(name = "secretc")]
 extern "C" {
     // TODO: Define the external C function
-    // "secret_c_calculation"
+    fn secret_c_calculation(x: c_int, y: c_double, z: c_char) -> c_int;
 }
 
 fn next_arg<T: FromStr>(args: &mut impl Iterator<Item = String>, message: &str) -> T
@@ -26,7 +26,9 @@ fn main() {
 
     // TODO: Call the external C function "secret_c_calculation"
     // with parameters x, y, z
-    let secret_value = 42;
+    let secret_value = unsafe {
+        secret_c_calculation(x, y, z as i8)
+    };
 
     println!("The secret value is {secret_value}");
 }

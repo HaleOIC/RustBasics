@@ -14,6 +14,8 @@ use std::ptr::null_mut as null;
 /// The list may have zero or more elements.
 /// 
 unsafe fn list_delete_first(list: *mut List<i32>) -> *mut List<i32> {
+    if list == null() { return null(); }
+
     // /!\ SAFETY: The list must be a valid linked list,
     //             so we get a pointer to the second node
     //             for later!
@@ -61,7 +63,7 @@ fn main() {
 /// A linked list (of type *mut List<T>)
 /// is considered valid if it is either:
 /// 
-/// 1. Null (i.e. list == null())
+/// 1. Null (i.e. list == std::ptr::null_mut())
 /// 
 /// 2. A heap allocated value
 ///    (constructed from a `Box`),
@@ -102,7 +104,7 @@ fn my_linked_list() -> *mut List<i32> {
 unsafe fn print_list(list: *mut List<i32>) {
     println!("=== PRINTING LIST ===");
     let mut curr = list;
-    while curr != null() {
+    while curr != std::ptr::null_mut() {
         // /!\ SAFETY: `curr` is not `null`,
         //             therefore it is safe to dereference
         //             and access its fields.
@@ -144,7 +146,7 @@ unsafe fn free_node(node: *mut List<i32>) {
 /// The list may have zero or more elements.
 unsafe fn free_list(list: *mut List<i32>) {
     let mut curr = list;
-    while curr != null() {
+    while curr != std::ptr::null_mut() {
         let to_free = curr;
 
         // /!\ SAFETY: `curr` is not `null`,
